@@ -4,6 +4,20 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, 
 from PySide6.QtCore import Qt
 
 class UIWidget(QWidget):
+    """_summary_
+
+    Attributes:
+        layout (QVBoxLayout): _description_
+        entityWidgetList (QListWidget): _description_
+        shapeLabel (QLabel): _description_
+        shapeComboBox (QComboBox): _description_
+        addButton (QPushButton): _description_
+        deleteButton (QPushButton): _description_
+        editButton (QPushButton): _description_
+
+    Methods:
+        addToList: _description_
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
 

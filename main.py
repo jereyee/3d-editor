@@ -1,13 +1,13 @@
 import json
 import pickle
 import sys
-from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime
+from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime, QTimer
 from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                                QPushButton, QListWidget, QLabel, QListWidgetItem, QComboBox,
-                               QLineEdit, QColorDialog, QFormLayout, QDialog)
+                               QLineEdit, QColorDialog, QFormLayout, QDialog, QGridLayout)
 from editObject import EditWindow
 from userInterface import UIWidget
 from entityObject import Entity3D
@@ -54,20 +54,30 @@ class MainWindow(QMainWindow):
 
         # Create a widget for the 3D window and the buttons
         widget = QWidget()
-        layout = QHBoxLayout(widget)  # Change QVBoxLayout to QHBoxLayout
+        mainLayout = QHBoxLayout(widget)  # Main layout
 
-        # Add the 3D window container to the layout
-        layout.addWidget(container, 1)
+        # Create a QVBoxLayout for the 3D window and the camera position label
+        vLayout = QVBoxLayout()
+        self.cameraPositionLabel = QLabel("Camera Position: ")
+        vLayout.addWidget(container, 1)
+        vLayout.addWidget(self.cameraPositionLabel)
 
-        # Create the UI widget and add it to the layout
+        # Add the QVBoxLayout to the main layout
+        mainLayout.addLayout(vLayout, 1)
+
+        # Create the UI widget and add it to the main layout
         self.uiWidget = UIWidget()
-        layout.addWidget(self.uiWidget)
+        mainLayout.addWidget(self.uiWidget)
 
         # Set the widget as the central widget of the window
         self.setCentralWidget(widget)
 
         # Create the 3D scene
         self.createScene()
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.updateCameraPosition)
+        self.timer.start(250)  # Update every 250 ms
 
         # Load entities from file
         self.entities = self.load_data('entities.json')
@@ -88,6 +98,11 @@ class MainWindow(QMainWindow):
         # Connect the currentItemChanged signal to a slot
         self.uiWidget.entityWidgetList.currentItemChanged.connect(
             self.updateEditButton)
+        
+    def updateCameraPosition(self):
+        camera_position = self.view.camera().position()
+        self.cameraPositionLabel.setText(
+            f"Camera position: x={camera_position.x():.2f}, y={camera_position.y():.2f}, z={camera_position.z():.2f}")
 
     def createScene(self):
         
