@@ -17,6 +17,9 @@ class EditWindow(QDialog):
         # Create input fields for the attributes
         self.nameEdit = QLineEdit()
         self.colorEdit = QColorDialog()
+        
+        # Remove buttons from the color dialog
+        self.colorEdit.setOptions(QColorDialog.NoButtons)
 
         # Create separate input fields for each component of the position
         self.positionXEdit = QLineEdit()

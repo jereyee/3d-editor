@@ -1,4 +1,6 @@
-from PySide6.QtWidgets import (QComboBox, QLabel, QListWidget, QPushButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
+                               QPushButton, QListWidget, QLabel, QListWidgetItem, QComboBox,
+                               QLineEdit, QColorDialog, QFormLayout, QDialog)
 from PySide6.QtCore import Qt
 
 class UIWidget(QWidget):
@@ -34,4 +36,10 @@ class UIWidget(QWidget):
         self.editButton = QPushButton("Edit object")
         self.editButton.setEnabled(False)  # Initially disabled
         self.layout.addWidget(self.editButton)
+
+    def addToList(self, entity):
+        # Add an entity to the list
+        entityItem = QListWidgetItem(entity.name)
+        entityItem.setData(Qt.UserRole, entity)
+        self.entityWidgetList.addItem(entityItem)
         

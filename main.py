@@ -1,27 +1,17 @@
+import json
+import pickle
 import sys
 from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime
 from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
-                               QPushButton, QListWidget, QLabel, QListWidgetItem, QComboBox, 
-                               QLineEdit, QColorDialog, QFormLayout,QDialog)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
+                               QPushButton, QListWidget, QLabel, QListWidgetItem, QComboBox,
+                               QLineEdit, QColorDialog, QFormLayout, QDialog)
 from editObject import EditWindow
 from userInterface import UIWidget
+from entityObject import Entity3D
 
-class Entity3D:
-    def __init__(self, root_entity, mesh, name):
-        self.entity = Qt3DCore.QEntity(root_entity)
-        self.mesh = mesh
-        self.name = name
-        self.material = Qt3DExtras.QDiffuseSpecularMaterial()
-        self.material.setSpecular(QColor(0, 0, 0))
-
-        self.transform = Qt3DCore.QTransform()
-
-        self.entity.addComponent(self.mesh)
-        self.entity.addComponent(self.transform)
-        self.entity.addComponent(self.material)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -53,8 +43,13 @@ class MainWindow(QMainWindow):
         # Create the 3D scene
         self.createScene()
 
-        # Create a list to store the entities
-        self.entities = []
+        # Load entities from file
+        self.entities = self.load_data('entities.json')
+
+        # Restore all objects to the UI Widget
+        if self.entities:
+            for entity in self.entities:
+                self.uiWidget.addToList(entity)
 
         # Store the selected entity, if any
         self.selectedEntity = None
@@ -65,7 +60,8 @@ class MainWindow(QMainWindow):
         self.uiWidget.editButton.clicked.connect(self.openEditWindow)
 
         # Connect the currentItemChanged signal to a slot
-        self.uiWidget.entityWidgetList.currentItemChanged.connect(self.updateEditButton)
+        self.uiWidget.entityWidgetList.currentItemChanged.connect(
+            self.updateEditButton)
 
     def createScene(self):
         # Root entity
@@ -78,7 +74,7 @@ class MainWindow(QMainWindow):
         # For camera controls
         self.camController = Qt3DExtras.QOrbitCameraController(self.rootEntity)
         self.camController.setLinearSpeed(180)
-        self.camController.setLookSpeed(50)
+        self.camController.setLookSpeed(180)
         self.camController.setCamera(self.view.camera())
 
         # Set the root entity of the scene
@@ -101,7 +97,7 @@ class MainWindow(QMainWindow):
 
     def addEntity(self, mesh, name):
         # Create an entity
-        entity = Entity3D(self.rootEntity, mesh, name)
+        entity = Entity3D(self.rootEntity, mesh, name + str(len(self.entities) + 1))
 
         if name == "Cube":
             entity.mesh.setXExtent(10)
@@ -111,15 +107,13 @@ class MainWindow(QMainWindow):
             entity.mesh.setRadius(5)
 
         entity.transform.setScale3D(QVector3D(1, 1, 1))  # Set scale
-        entity.transform.setRotation(QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 45))  # Set rotation
-        entity.transform.setTranslation(QVector3D(10 * len(self.entities), 0, 0))  # Set position
+        entity.transform.setRotation(QQuaternion.fromAxisAndAngle(
+            QVector3D(1, 0, 0), 45))  # Set rotation
+        entity.transform.setTranslation(
+            QVector3D(10 * len(self.entities), 0, 0))  # Set position
 
-        # Create a QListWidgetItem for the entity
-        entityItem = QListWidgetItem(name)
-        entityItem.setData(Qt.UserRole, entity)
-
-        # Add the item to the list
-        self.uiWidget.entityWidgetList.addItem(entityItem)
+        # Add the entity to the UI widget
+        self.uiWidget.addToList(entity)
 
         # Add the entity to the dictionary of entities
         self.entities.append(entity)
@@ -164,6 +158,24 @@ class MainWindow(QMainWindow):
         self.editWindow = EditWindow(self)
         self.editWindow.loadEntity(self.selectedEntity)
         self.editWindow.show()
+
+    def closeEvent(self, event):
+        # Save entities to file when the application is closing
+        self.save_data(self.entities, 'entities.json')
+        event.accept()
+
+    def save_data(self, data, filename):
+        with open(filename, 'w') as f:
+            json.dump([entity.to_dict() for entity in data], f)
+
+    def load_data(self, filename):
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+                return [Entity3D.from_dict(d, self.rootEntity) for d in data]
+        except (FileNotFoundError, EOFError, ValueError):
+            return []
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
