@@ -14,6 +14,32 @@ from entityObject import Entity3D
 
 
 class MainWindow(QMainWindow):
+    """_summary_
+
+    Args:
+        QMainWindow (_type_): _description_
+
+    Attributes:
+        view (Qt3DExtras.Qt3DWindow): _description_
+        container (QWidget): _description_
+        size (QSize): _description_
+        camController (Qt3DExtras.QOrbitCameraController): _description_
+        rootEntity (Qt3DCore.QEntity): _description_
+        entities (list): _description_
+        selectedEntity (Entity3D): _description_
+        editWindow (EditWindow): _description_
+
+    Methods:
+        createScene: _description_
+        addShape: _description_
+        addEntity: _description_
+        deleteEntity: _description_
+        updateEditButton: _description_
+        openEditWindow: _description_
+        closeEvent: _description_
+        save_data: _description_
+        load_data: _description_
+    """
     def __init__(self):
         super().__init__()
 
@@ -64,6 +90,7 @@ class MainWindow(QMainWindow):
             self.updateEditButton)
 
     def createScene(self):
+        
         # Root entity
         self.rootEntity = Qt3DCore.QEntity()
 

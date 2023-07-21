@@ -2,6 +2,19 @@ from PySide6.QtGui import QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 class Entity3D:
+    """_summary_
+
+    Attributes:
+        entity (Qt3DCore.QEntity): _description_
+        mesh (Qt3DExtras.QCuboidMesh): _description_
+        name (str): _description_
+        material (Qt3DExtras.QDiffuseSpecularMaterial): _description_
+        transform (Qt3DCore.QTransform): _description_
+
+    Methods:
+        to_dict: _description_
+        from_dict: _description_
+    """
     def __init__(self, root_entity, mesh, name):
         self.entity = Qt3DCore.QEntity(root_entity)
         self.mesh = mesh

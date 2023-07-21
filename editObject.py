@@ -6,6 +6,35 @@ from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, Q
 
 
 class EditWindow(QDialog):
+    """_summary_
+
+    Args:
+        QDialog (_type_): _description_
+
+    Attributes:
+        editForm (QFormLayout): _description_
+        nameEdit (QLineEdit): _description_
+        colorEdit (QColorDialog): _description_
+        positionXEdit (QLineEdit): _description_
+        positionYEdit (QLineEdit): _description_
+        positionZEdit (QLineEdit): _description_
+        positionLayout (QHBoxLayout): _description_
+        orientationWEdit (QLineEdit): _description_
+        orientationXEdit (QLineEdit): _description_
+        orientationYEdit (QLineEdit): _description_
+        orientationZEdit (QLineEdit): _description_
+        orientationLayout (QHBoxLayout): _description_
+        dimensionXEdit (QLineEdit): _description_
+        dimensionYEdit (QLineEdit): _description_
+        dimensionZEdit (QLineEdit): _description_
+        dimensionLayout (QHBoxLayout): _description_
+        saveButton (QPushButton): _description_
+        selectedEntity (Entity3D): _description_
+
+    Methods:
+        loadEntity: _description_
+        saveChanges: _description_
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
 
