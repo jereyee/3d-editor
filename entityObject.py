@@ -72,7 +72,7 @@ class Entity3D:
             data['shape'] = 'Sphere'
         return data
 
-    def update_properties(self, data):
+    """ def update_properties(self, data):
         self.name = data['name']
         self.material.setDiffuse(QColor(*data['color']))
         self.transform.setTranslation(QVector3D(*data['position']))
@@ -83,7 +83,26 @@ class Entity3D:
                 self.mesh.setYExtent(data['dimensions'][1])
                 self.mesh.setZExtent(data['dimensions'][2])
             elif data['shape'] == 'Sphere':
-                self.mesh.setRadius(data['dimensions'][0])
+                self.mesh.setRadius(data['dimensions'][0]) """
+    
+    def update_properties(self, data):
+        for key, value in data.items():
+            if key == 'name':
+                self.name = value
+            elif key == 'color':
+                self.material.setDiffuse(QColor(*value))
+            elif key == 'position':
+                self.transform.setTranslation(QVector3D(*value))
+                print(self.transform.translation())
+            elif key == 'orientation':
+                self.transform.setRotation(QQuaternion(*value))
+            elif key == 'dimensions':
+                if isinstance(self.mesh, Qt3DExtras.QCuboidMesh):
+                    self.mesh.setXExtent(value[0])
+                    self.mesh.setYExtent(value[1])
+                    self.mesh.setZExtent(value[2])
+                elif isinstance(self.mesh, Qt3DExtras.QSphereMesh):
+                    self.mesh.setRadius(value[0])
 
     def update_from_dict(self, data):
         # Update the properties of the entity from a dictionary

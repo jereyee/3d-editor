@@ -6,21 +6,25 @@ from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, Q
 
 from entityObject import Entity3D
 
+
 class Command:
     """ Currently, this only supports undo-ing changes to the name, color, position, and orientation of an entity.
+    This also does not account for dragging the object.
     In the future, it could possibly support undo-ing adding an object to the scene, deleting an object from the scene, etc.
     """
+
     def __init__(self, entity, data):
         self.entity = entity
-        self.previousData = self.entity.to_dict()
+        self.previousData = entity.to_dict()
         self.currentData = data
 
     def execute(self):
-        self.entity.update_from_dict(self.currentData)
+        if self.entity is not None and self.entity.entity is not None:
+            self.entity.update_properties(self.currentData)
 
     def undo(self):
-        if self.previousData is not None:
-            self.entity.update_from_dict(self.previousData)
+        if self.entity is not None and self.entity.entity is not None:
+            self.entity.update_properties(self.previousData)
 
 
 class EditWindow(QDialog):
@@ -48,11 +52,22 @@ class EditWindow(QDialog):
         dimensionLayout (QHBoxLayout): _description_
         saveButton (QPushButton): _description_
         selectedEntity (Entity3D): _description_
+        history (list): _description_
+        history_index (int): _description_
 
     Methods:
         loadEntity: _description_
         saveChanges: _description_
+        applyNameChange: _description_
+        applyPositionChange: _description_
+        applyOrientationChange: _description_
+        applyDimensionChange: _description_
+        updateColorLabel: _description_
+        openColorPicker: _description_
+        undo: _description_
+        redo: _description_
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -126,21 +141,118 @@ class EditWindow(QDialog):
         self.saveButton = QPushButton("Save")
         self.saveButton.clicked.connect(self.saveChanges)
         self.editForm.addRow(self.saveButton)
+        self.saveButton.hide()
 
         # Create a list to keep track of the changes
         self.history = []
         self.history_index = -1
-    
-    def updateColorLabel(self, color):
-        palette = self.colorLabel.palette()
-        palette.setColor(self.colorLabel.backgroundRole(), color)
-        self.colorLabel.setPalette(palette)
+
+        # Connect the editingFinished signals to the applyChanges methods
+        self.nameEdit.editingFinished.connect(self.applyNameChange)
+        self.positionXEdit.editingFinished.connect(self.applyPositionChange)
+        self.positionYEdit.editingFinished.connect(self.applyPositionChange)
+        self.positionZEdit.editingFinished.connect(self.applyPositionChange)
+        self.orientationWEdit.editingFinished.connect(
+            self.applyOrientationChange)
+        self.orientationXEdit.editingFinished.connect(
+            self.applyOrientationChange)
+        self.orientationYEdit.editingFinished.connect(
+            self.applyOrientationChange)
+        self.orientationZEdit.editingFinished.connect(
+            self.applyOrientationChange)
+        self.dimensionXEdit.editingFinished.connect(self.applyDimensionChange)
+        self.dimensionYEdit.editingFinished.connect(self.applyDimensionChange)
+        self.dimensionZEdit.editingFinished.connect(self.applyDimensionChange)
+
+    def applyNameChange(self):
+        # Get the new name from the input field
+        name = self.nameEdit.text()
+
+        # Create a command to update the selected entity's name
+        command = Command(self.selectedEntity, {'name': name})
+        command.execute()
+
+        # Add it to the history
+        self.history = self.history[:self.history_index+1]
+        self.history.append(command)
+        self.history_index += 1
+
+        # Update the text of the QListWidgetItem
+        print(type(self.parent()))
+        self.selectedEntity.mainWindow.uiWidget.entityWidgetList.currentItem().setText(name)
+
+    def applyPositionChange(self):
+        # Get the new position
+        positionX = self.positionXEdit.value()
+        positionY = self.positionYEdit.value()
+        positionZ = self.positionZEdit.value()
+        position = (positionX, positionY, positionZ)
+
+        # Create a command to update the selected entity's position
+        command = Command(self.selectedEntity, {'position': position})
+        command.execute()
+
+        # Add it to the history
+        self.history = self.history[:self.history_index+1]
+        self.history.append(command)
+        self.history_index += 1
+
+    def applyOrientationChange(self):
+        # Get the new orientation
+        orientationW = self.orientationWEdit.value()
+        orientationX = self.orientationXEdit.value()
+        orientationY = self.orientationYEdit.value()
+        orientationZ = self.orientationZEdit.value()
+        orientation = (orientationW, orientationX, orientationY, orientationZ)
+
+        # Create a command to update the selected entity's orientation
+        command = Command(self.selectedEntity, {'orientation': orientation})
+        command.execute()
+
+        # Add it to the history
+        self.history = self.history[:self.history_index+1]
+        self.history.append(command)
+        self.history_index += 1
+
+    def applyDimensionChange(self):
+        # Get the new dimensions
+        dimensionX = self.dimensionXEdit.value()
+        dimensionY = self.dimensionYEdit.value()
+        dimensionZ = self.dimensionZEdit.value()
+        dimensions = (dimensionX, dimensionY, dimensionZ)
+
+        # Create a command to update the selected entity's dimensions
+        command = Command(self.selectedEntity, {'dimensions': dimensions})
+        command.execute()
+
+        # Add it to the history
+        self.history = self.history[:self.history_index+1]
+        self.history.append(command)
+        self.history_index += 1
 
     def openColorPicker(self, event):
         color = QColorDialog.getColor(self.selectedEntity.material.diffuse())
         if color.isValid():
             self.updateColorLabel(color)
-            
+
+            # Create a command to update the selected entity's color
+            command = Command(self.selectedEntity, {'color': color.getRgb()})
+            command.execute()
+
+            # Add it to the history
+            self.history = self.history[:self.history_index+1]
+            self.history.append(command)
+            self.history_index += 1
+
+    def updateColorLabel(self, color):
+        palette = self.colorLabel.palette()
+        palette.setColor(self.colorLabel.backgroundRole(), color)
+        self.colorLabel.setPalette(palette)
+
+    """ def openColorPicker(self, event):
+        color = QColorDialog.getColor(self.selectedEntity.material.diffuse())
+        if color.isValid():
+            self.updateColorLabel(color) """
 
     def loadEntity(self, entity):
         self.selectedEntity = entity
@@ -224,8 +336,9 @@ class EditWindow(QDialog):
 
         # Close the edit window
         self.close()
-    
+
     def undo(self):
+        """ There's a bug here where the undo throws an error when the object has already been deleted """
         if self.history_index >= 0:
             self.history[self.history_index].undo()
             self.history_index -= 1

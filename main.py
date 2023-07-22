@@ -14,32 +14,6 @@ from entityObject import Entity3D
 
 
 class MainWindow(QMainWindow):
-    """_summary_
-
-    Args:
-        QMainWindow (_type_): _description_
-
-    Attributes:
-        view (Qt3DExtras.Qt3DWindow): _description_
-        container (QWidget): _description_
-        size (QSize): _description_
-        camController (Qt3DExtras.QOrbitCameraController): _description_
-        rootEntity (Qt3DCore.QEntity): _description_
-        entities (list): _description_
-        selectedEntity (Entity3D): _description_
-        editWindow (EditWindow): _description_
-
-    Methods:
-        createScene: _description_
-        addShape: _description_
-        addEntity: _description_
-        deleteEntity: _description_
-        updateEditButton: _description_
-        openEditWindow: _description_
-        closeEvent: _description_
-        save_data: _description_
-        load_data: _description_
-    """
     def __init__(self):
         super().__init__()
 
@@ -69,6 +43,11 @@ class MainWindow(QMainWindow):
         self.uiWidget = UIWidget()
         mainLayout.addWidget(self.uiWidget)
 
+        # Create an edit window and add it to the main layout
+        self.editWindow = EditWindow(self)
+        mainLayout.addWidget(self.editWindow)
+        self.editWindow.hide()  # Initially hidden
+
         # Set the widget as the central widget of the window
         self.setCentralWidget(widget)
 
@@ -91,14 +70,11 @@ class MainWindow(QMainWindow):
         # Connect the buttons to their respective slots
         self.uiWidget.addButton.clicked.connect(self.addShape)
         self.uiWidget.deleteButton.clicked.connect(self.deleteEntity)
-        self.uiWidget.editButton.clicked.connect(self.openEditWindow)
+        # self.uiWidget.editButton.clicked.connect(self.openEditWindow)
 
         # Connect the currentItemChanged signal to a slot
         self.uiWidget.entityWidgetList.currentItemChanged.connect(
             self.updateEditButton)
-
-        # Create an edit window
-        self.editWindow = EditWindow(self)
 
         # Connect the undo and redo buttons to the undo and redo methods of the EditWindow
         self.uiWidget.undoButton.clicked.connect(self.editWindow.undo)
@@ -240,18 +216,22 @@ class MainWindow(QMainWindow):
     def updateEditButton(self):
         # Enable the "Edit" button if an item is selected, disable it otherwise
         selectedItem = self.uiWidget.entityWidgetList.currentItem()
-        self.uiWidget.editButton.setEnabled(selectedItem is not None)
+        # self.uiWidget.editButton.setEnabled(selectedItem is not None)
 
         # Update selectedEntity
         if selectedItem is not None:
             self.selectedEntity = selectedItem.data(Qt.UserRole)
+            self.openEditWindow()
         else:
             self.selectedEntity = None
 
     def openEditWindow(self):
-        # Open the edit window
-        self.editWindow.loadEntity(self.selectedEntity)
-        self.editWindow.show()
+        # Show the edit window if an entity is selected, hide it otherwise
+        if self.selectedEntity is not None:
+            self.editWindow.loadEntity(self.selectedEntity)
+            self.editWindow.show()
+        else:
+            self.editWindow.hide()
 
     def closeEvent(self, event):
         # Save entities to file when the application is closing
