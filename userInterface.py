@@ -47,7 +47,7 @@ class UIWidget(QWidget):
         self.layout.addWidget(self.deleteButton)
 
         # Create an edit button
-        # self.editButton = QPushButton("Edit object")
+        #  self.editButton = QPushButton("Edit object")
         # self.editButton.setEnabled(False)  # Initially disabled
         # self.layout.addWidget(self.editButton)
 

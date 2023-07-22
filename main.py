@@ -1,7 +1,7 @@
 import json
 import pickle
 import sys
-from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime, QTimer
+from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime, QTimer, Signal
 from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
@@ -39,14 +39,20 @@ class MainWindow(QMainWindow):
         # Add the QVBoxLayout to the main layout
         mainLayout.addLayout(vLayout, 1)
 
+        # Create a QVBoxLayout for the UI widget and edit window
+        vSideLayout = QVBoxLayout()
+
         # Create the UI widget and add it to the main layout
         self.uiWidget = UIWidget()
-        mainLayout.addWidget(self.uiWidget)
+        vSideLayout.addWidget(self.uiWidget)
 
         # Create an edit window and add it to the main layout
         self.editWindow = EditWindow(self)
-        mainLayout.addWidget(self.editWindow)
+        vSideLayout.addWidget(self.editWindow)
         self.editWindow.hide()  # Initially hidden
+
+        # Add both the UI Widget and Edit Window to the layout
+        mainLayout.addLayout(vSideLayout)
 
         # Set the widget as the central widget of the window
         self.setCentralWidget(widget)
@@ -114,6 +120,8 @@ class MainWindow(QMainWindow):
                 # Clamp the z position to [-10, 10]
                 # new_position.setZ(max(min(new_position.z(), 10), -10))
                 self.selectedEntity.transform.setTranslation(new_position)
+
+                self.editWindow.loadEntity(self.selectedEntity)
 
             # Update the previous mouse position
             self.previousMousePosition = world_position
