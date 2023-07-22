@@ -75,12 +75,15 @@ class MainWindow(QMainWindow):
         # Create the 3D scene
         self.createScene()
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.updateCameraPosition)
-        self.timer.start(250)  # Update every 250 ms
+        # Create a timer to update the camera position label
+        self.view.camera().positionChanged.connect(self.updateCameraPosition)
 
         # Load entities from file
         self.entities = self.load_data('entities.json')
+
+        # Store the previous mouse position
+        self.previousMousePosition = QVector3D()
+        self.mousePressed = False
 
         # Restore all objects to the UI Widget
         if self.entities:
@@ -99,10 +102,55 @@ class MainWindow(QMainWindow):
         self.uiWidget.entityWidgetList.currentItemChanged.connect(
             self.updateEditButton)
         
+        # Create the line entity
+        self.lineEntity = None
+    
+    def onMousePressed(self, event):
+        self.mousePressed = True
+        self.camController.setEnabled(False)
+        self.previousMousePosition = event.worldIntersection()
+        self.initialZ = self.previousMousePosition.z()
+
+    def onMouseReleased(self, event):
+        self.mousePressed = False
+        self.camController.setEnabled(True)
+
+    def onMouseMoved(self, event):
+        """ When I keep swinging the mouse around, the object gets smaller and smaller. Why? """
+        # Get the world position of the mouse click
+        world_position = event.worldIntersection()
+
+        if self.mousePressed:
+            # If an entity is selected, calculate the new position of the entity
+            if self.selectedEntity is not None:
+                # Calculate the difference between the current and previous mouse positions
+                difference = QVector3D(world_position.x() - self.previousMousePosition.x(),
+                                    world_position.y() - self.previousMousePosition.y(),
+                                    0)  # Ignore changes in Z
+
+                # Apply the difference to the entity's position
+                new_position = self.selectedEntity.transform.translation() + difference
+
+                # Clamp the z position to [-10, 10]
+                # new_position.setZ(max(min(new_position.z(), 10), -10))
+                self.selectedEntity.transform.setTranslation(new_position)
+
+            # Update the previous mouse position
+            self.previousMousePosition = world_position
+        
     def updateCameraPosition(self):
+        # Update the camera position label
         camera_position = self.view.camera().position()
         self.cameraPositionLabel.setText(
             f"Camera position: x={camera_position.x():.2f}, y={camera_position.y():.2f}, z={camera_position.z():.2f}")
+        
+    def onEntityClicked(self, entity):
+        # Find the corresponding item in the list and select it
+        for i in range(self.uiWidget.entityWidgetList.count()):
+            item = self.uiWidget.entityWidgetList.item(i)
+            if item.data(Qt.UserRole) is entity:
+                self.uiWidget.entityWidgetList.setCurrentItem(item)
+                break
 
     def createScene(self):
         
@@ -110,12 +158,13 @@ class MainWindow(QMainWindow):
         self.rootEntity = Qt3DCore.QEntity()
 
         # Camera
-        self.view.camera().setPosition(QVector3D(0, 0, 100))
-        self.view.camera().setViewCenter(QVector3D(0, 0, 30))
+        self.view.camera().setUpVector(QVector3D(0, 1, 0))
+        self.view.camera().setViewCenter(QVector3D(0, 0, 0))
+        self.view.camera().setPosition(QVector3D(0, 0, 20))
 
         # For camera controls
         self.camController = Qt3DExtras.QOrbitCameraController(self.rootEntity)
-        self.camController.setLinearSpeed(180)
+        self.camController.setLinearSpeed(90)
         self.camController.setLookSpeed(180)
         self.camController.setCamera(self.view.camera())
 
@@ -139,20 +188,20 @@ class MainWindow(QMainWindow):
 
     def addEntity(self, mesh, name):
         # Create an entity
-        entity = Entity3D(self.rootEntity, mesh, name + str(len(self.entities) + 1))
+        entity = Entity3D(self.rootEntity, mesh, name + str(len(self.entities) + 1), self)
 
         if name == "Cube":
-            entity.mesh.setXExtent(10)
-            entity.mesh.setYExtent(10)
-            entity.mesh.setZExtent(10)
+            entity.mesh.setXExtent(1)
+            entity.mesh.setYExtent(1)
+            entity.mesh.setZExtent(1)
         elif name == "Sphere":
-            entity.mesh.setRadius(5)
+            entity.mesh.setRadius(1)
 
         entity.transform.setScale3D(QVector3D(1, 1, 1))  # Set scale
         entity.transform.setRotation(QQuaternion.fromAxisAndAngle(
             QVector3D(1, 0, 0), 45))  # Set rotation
         entity.transform.setTranslation(
-            QVector3D(10 * len(self.entities), 0, 0))  # Set position
+            QVector3D(3 * len(self.entities), 0, 0))  # Set position
 
         # Add the entity to the UI widget
         self.uiWidget.addToList(entity)
@@ -214,7 +263,7 @@ class MainWindow(QMainWindow):
         try:
             with open(filename, 'r') as f:
                 data = json.load(f)
-                return [Entity3D.from_dict(d, self.rootEntity) for d in data]
+                return [Entity3D.from_dict(d, self.rootEntity, self) for d in data]
         except (FileNotFoundError, EOFError, ValueError):
             return []
 
