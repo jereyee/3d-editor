@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QColorDialog, QDialog,
-                               QFormLayout, QLineEdit,
+                               QFormLayout, QLineEdit, QLabel,
                                QPushButton, QHBoxLayout, QDoubleSpinBox)
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
@@ -63,15 +63,21 @@ class EditWindow(QDialog):
 
         # Create input fields for the attributes
         self.nameEdit = QLineEdit()
-        self.colorEdit = QColorDialog()
-        
-        # Remove buttons from the color dialog
-        self.colorEdit.setOptions(QColorDialog.NoButtons)
+
+        # Create a label for the color
+        self.colorLabel = QLabel()
+        self.colorLabel.setAutoFillBackground(True)
+        self.colorLabel.mousePressEvent = self.openColorPicker
 
         # Create separate input fields for each component of the position
         self.positionXEdit = QDoubleSpinBox()
         self.positionYEdit = QDoubleSpinBox()
         self.positionZEdit = QDoubleSpinBox()
+
+        # Set the range of the QDoubleSpinBox widgets
+        self.positionXEdit.setRange(-100.0, 100.0)
+        self.positionYEdit.setRange(-100.0, 100.0)
+        self.positionZEdit.setRange(-100.0, 100.0)
 
         # Create a QHBoxLayout for the position fields
         self.positionLayout = QHBoxLayout()
@@ -84,6 +90,12 @@ class EditWindow(QDialog):
         self.orientationXEdit = QDoubleSpinBox()
         self.orientationYEdit = QDoubleSpinBox()
         self.orientationZEdit = QDoubleSpinBox()
+
+        # Set the range of the QDoubleSpinBox widgets
+        self.orientationWEdit.setRange(-1.0, 1.0)
+        self.orientationXEdit.setRange(-1.0, 1.0)
+        self.orientationYEdit.setRange(-1.0, 1.0)
+        self.orientationZEdit.setRange(-1.0, 1.0)
 
         # Create a QHBoxLayout for the orientation fields
         self.orientationLayout = QHBoxLayout()
@@ -105,7 +117,7 @@ class EditWindow(QDialog):
 
         # Add the input fields to the form
         self.editForm.addRow("Name:", self.nameEdit)
-        self.editForm.addRow("Color:", self.colorEdit)
+        self.editForm.addRow("Color:", self.colorLabel)
         self.editForm.addRow("Position:", self.positionLayout)
         self.editForm.addRow("Orientation:", self.orientationLayout)
         self.editForm.addRow("Dimensions:", self.dimensionLayout)
@@ -118,17 +130,31 @@ class EditWindow(QDialog):
         # Create a list to keep track of the changes
         self.history = []
         self.history_index = -1
-        
+    
+    def updateColorLabel(self, color):
+        palette = self.colorLabel.palette()
+        palette.setColor(self.colorLabel.backgroundRole(), color)
+        self.colorLabel.setPalette(palette)
+
+    def openColorPicker(self, event):
+        color = QColorDialog.getColor(self.selectedEntity.material.diffuse())
+        if color.isValid():
+            self.updateColorLabel(color)
+            
 
     def loadEntity(self, entity):
         self.selectedEntity = entity
 
         # Update the input fields with the selected entity's attributes
         self.nameEdit.setText(self.selectedEntity.name)
-        self.colorEdit.setCurrentColor(self.selectedEntity.material.diffuse())
+
+        # Update the color label
+        color = self.selectedEntity.material.diffuse()
+        self.updateColorLabel(color)
 
         # Update the position fields
         position = self.selectedEntity.transform.translation()
+        print(position.x(), position.y(), position.z())
         self.positionXEdit.setValue(position.x())
         self.positionYEdit.setValue(position.y())
         self.positionZEdit.setValue(position.z())
@@ -157,7 +183,7 @@ class EditWindow(QDialog):
     def saveChanges(self):
         # Get the new attributes from the input fields
         name = self.nameEdit.text()
-        color = self.colorEdit.currentColor()
+        color = self.colorLabel.palette().color(self.colorLabel.backgroundRole())
 
         # Get the new position
         positionX = self.positionXEdit.value()
