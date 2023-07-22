@@ -72,6 +72,23 @@ class Entity3D:
             data['shape'] = 'Sphere'
         return data
 
+    def update_properties(self, data):
+        self.name = data['name']
+        self.material.setDiffuse(QColor(*data['color']))
+        self.transform.setTranslation(QVector3D(*data['position']))
+        self.transform.setRotation(QQuaternion(*data['orientation']))
+        if 'shape' in data:
+            if data['shape'] == 'Cube':
+                self.mesh.setXExtent(data['dimensions'][0])
+                self.mesh.setYExtent(data['dimensions'][1])
+                self.mesh.setZExtent(data['dimensions'][2])
+            elif data['shape'] == 'Sphere':
+                self.mesh.setRadius(data['dimensions'][0])
+
+    def update_from_dict(self, data):
+        # Update the properties of the entity from a dictionary
+        self.update_properties(data)
+
     @staticmethod
     def from_dict(data, root_entity, mainWindow):
         # Create a new entity from a dictionary
@@ -81,13 +98,5 @@ class Entity3D:
         }
         shape_class = shape_classes.get(data['shape'])
         entity = Entity3D(root_entity, shape_class(), data['name'], mainWindow)
-        entity.material.setDiffuse(QColor(*data['color']))
-        entity.transform.setTranslation(QVector3D(*data['position']))
-        entity.transform.setRotation(QQuaternion(*data['orientation']))
-        if data['shape'] == 'Cube':
-            entity.mesh.setXExtent(data['dimensions'][0])
-            entity.mesh.setYExtent(data['dimensions'][1])
-            entity.mesh.setZExtent(data['dimensions'][2])
-        elif data['shape'] == 'Sphere':
-            entity.mesh.setRadius(data['dimensions'][0])
+        entity.update_properties(data)
         return entity

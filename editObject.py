@@ -1,8 +1,26 @@
 from PySide6.QtWidgets import (QColorDialog, QDialog,
                                QFormLayout, QLineEdit,
-                               QPushButton, QHBoxLayout)
+                               QPushButton, QHBoxLayout, QDoubleSpinBox)
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
+
+from entityObject import Entity3D
+
+class Command:
+    """ Currently, this only supports undo-ing changes to the name, color, position, and orientation of an entity.
+    In the future, it could possibly support undo-ing adding an object to the scene, deleting an object from the scene, etc.
+    """
+    def __init__(self, entity, data):
+        self.entity = entity
+        self.previousData = self.entity.to_dict()
+        self.currentData = data
+
+    def execute(self):
+        self.entity.update_from_dict(self.currentData)
+
+    def undo(self):
+        if self.previousData is not None:
+            self.entity.update_from_dict(self.previousData)
 
 
 class EditWindow(QDialog):
@@ -51,9 +69,9 @@ class EditWindow(QDialog):
         self.colorEdit.setOptions(QColorDialog.NoButtons)
 
         # Create separate input fields for each component of the position
-        self.positionXEdit = QLineEdit()
-        self.positionYEdit = QLineEdit()
-        self.positionZEdit = QLineEdit()
+        self.positionXEdit = QDoubleSpinBox()
+        self.positionYEdit = QDoubleSpinBox()
+        self.positionZEdit = QDoubleSpinBox()
 
         # Create a QHBoxLayout for the position fields
         self.positionLayout = QHBoxLayout()
@@ -62,10 +80,10 @@ class EditWindow(QDialog):
         self.positionLayout.addWidget(self.positionZEdit)
 
         # Create separate input fields for each component of the orientation
-        self.orientationWEdit = QLineEdit()
-        self.orientationXEdit = QLineEdit()
-        self.orientationYEdit = QLineEdit()
-        self.orientationZEdit = QLineEdit()
+        self.orientationWEdit = QDoubleSpinBox()
+        self.orientationXEdit = QDoubleSpinBox()
+        self.orientationYEdit = QDoubleSpinBox()
+        self.orientationZEdit = QDoubleSpinBox()
 
         # Create a QHBoxLayout for the orientation fields
         self.orientationLayout = QHBoxLayout()
@@ -75,9 +93,9 @@ class EditWindow(QDialog):
         self.orientationLayout.addWidget(self.orientationZEdit)
 
         # Create separate input fields for each dimension of the object
-        self.dimensionXEdit = QLineEdit()
-        self.dimensionYEdit = QLineEdit()
-        self.dimensionZEdit = QLineEdit()
+        self.dimensionXEdit = QDoubleSpinBox()
+        self.dimensionYEdit = QDoubleSpinBox()
+        self.dimensionZEdit = QDoubleSpinBox()
 
         # Create a QHBoxLayout for the dimension fields
         self.dimensionLayout = QHBoxLayout()
@@ -97,6 +115,11 @@ class EditWindow(QDialog):
         self.saveButton.clicked.connect(self.saveChanges)
         self.editForm.addRow(self.saveButton)
 
+        # Create a list to keep track of the changes
+        self.history = []
+        self.history_index = -1
+        
+
     def loadEntity(self, entity):
         self.selectedEntity = entity
 
@@ -106,28 +129,28 @@ class EditWindow(QDialog):
 
         # Update the position fields
         position = self.selectedEntity.transform.translation()
-        self.positionXEdit.setText(str(position.x()))
-        self.positionYEdit.setText(str(position.y()))
-        self.positionZEdit.setText(str(position.z()))
+        self.positionXEdit.setValue(position.x())
+        self.positionYEdit.setValue(position.y())
+        self.positionZEdit.setValue(position.z())
 
         # Update the orientation fields
         orientation = self.selectedEntity.transform.rotation()
-        self.orientationWEdit.setText(str(orientation.scalar()))
-        self.orientationXEdit.setText(str(orientation.x()))
-        self.orientationYEdit.setText(str(orientation.y()))
-        self.orientationZEdit.setText(str(orientation.z()))
+        self.orientationWEdit.setValue(orientation.scalar())
+        self.orientationXEdit.setValue(orientation.x())
+        self.orientationYEdit.setValue(orientation.y())
+        self.orientationZEdit.setValue(orientation.z())
 
         # Update the dimension fields
         if isinstance(self.selectedEntity.mesh, Qt3DExtras.QCuboidMesh):
-            self.dimensionXEdit.setText(str(self.selectedEntity.mesh.xExtent()))
-            self.dimensionYEdit.setText(str(self.selectedEntity.mesh.yExtent()))
-            self.dimensionZEdit.setText(str(self.selectedEntity.mesh.zExtent()))
+            self.dimensionXEdit.setValue(self.selectedEntity.mesh.xExtent())
+            self.dimensionYEdit.setValue(self.selectedEntity.mesh.yExtent())
+            self.dimensionZEdit.setValue(self.selectedEntity.mesh.zExtent())
             self.dimensionYEdit.setVisible(True)
             self.dimensionZEdit.setVisible(True)
         elif isinstance(self.selectedEntity.mesh, Qt3DExtras.QSphereMesh):
-            self.dimensionXEdit.setText(str(self.selectedEntity.mesh.radius()))
-            self.dimensionYEdit.setText("")
-            self.dimensionZEdit.setText("")
+            self.dimensionXEdit.setValue(self.selectedEntity.mesh.radius())
+            self.dimensionYEdit.setValue(0)
+            self.dimensionZEdit.setValue(0)
             self.dimensionYEdit.setVisible(False)
             self.dimensionZEdit.setVisible(False)
 
@@ -137,40 +160,51 @@ class EditWindow(QDialog):
         color = self.colorEdit.currentColor()
 
         # Get the new position
-        positionX = float(self.positionXEdit.text())
-        positionY = float(self.positionYEdit.text())
-        positionZ = float(self.positionZEdit.text())
-        position = QVector3D(positionX, positionY, positionZ)
+        positionX = self.positionXEdit.value()
+        positionY = self.positionYEdit.value()
+        positionZ = self.positionZEdit.value()
+        position = (positionX, positionY, positionZ)
 
         # Get the new orientation
-        orientationW = float(self.orientationWEdit.text())
-        orientationX = float(self.orientationXEdit.text())
-        orientationY = float(self.orientationYEdit.text())
-        orientationZ = float(self.orientationZEdit.text())
-        orientation = QQuaternion(
+        orientationW = self.orientationWEdit.value()
+        orientationX = self.orientationXEdit.value()
+        orientationY = self.orientationYEdit.value()
+        orientationZ = self.orientationZEdit.value()
+        orientation = (
             orientationW, orientationX, orientationY, orientationZ)
 
         # Get the new dimensions
-        dimensionX = float(self.dimensionXEdit.text())
-        dimensionY = float(self.dimensionYEdit.text() or '0')
-        dimensionZ = float(self.dimensionZEdit.text() or '0')
+        dimensionX = self.dimensionXEdit.value()
+        dimensionY = self.dimensionYEdit.value()
+        dimensionZ = self.dimensionZEdit.value()
 
-        # Update the selected entity's attributes
-        self.selectedEntity.name = name
-        self.selectedEntity.material.setDiffuse(color)
-        self.selectedEntity.transform.setTranslation(position)
-        self.selectedEntity.transform.setRotation(orientation)
+        # Create a command to update the selected entity's attributes
+        command = Command(self.selectedEntity, {
+            'name': name,
+            'color': color.getRgb(),
+            'position': position,
+            'orientation': orientation,
+            'dimensions': (dimensionX, dimensionY, dimensionZ),
+        })
+        command.execute()
 
-        # Update the dimensions of the selected entity
-        if isinstance(self.selectedEntity.mesh, Qt3DExtras.QCuboidMesh):
-            self.selectedEntity.mesh.setXExtent(dimensionX)
-            self.selectedEntity.mesh.setYExtent(dimensionY)
-            self.selectedEntity.mesh.setZExtent(dimensionZ)
-        elif isinstance(self.selectedEntity.mesh, Qt3DExtras.QSphereMesh):
-            self.selectedEntity.mesh.setRadius(dimensionX)
+        # Add it to the history
+        self.history = self.history[:self.history_index+1]
+        self.history.append(command)
+        self.history_index += 1
 
         # Update the text of the QListWidgetItem
         self.parent().uiWidget.entityWidgetList.currentItem().setText(name)
 
         # Close the edit window
         self.close()
+    
+    def undo(self):
+        if self.history_index >= 0:
+            self.history[self.history_index].undo()
+            self.history_index -= 1
+
+    def redo(self):
+        if self.history_index < len(self.history) - 1:
+            self.history_index += 1
+            self.history[self.history_index].execute()

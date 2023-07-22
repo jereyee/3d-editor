@@ -51,9 +51,17 @@ class UIWidget(QWidget):
         self.editButton.setEnabled(False)  # Initially disabled
         self.layout.addWidget(self.editButton)
 
+        # Create undo and redo buttons
+        self.undoButton = QPushButton("Undo")
+        self.layout.addWidget(self.undoButton)
+
+        self.redoButton = QPushButton("Redo")
+        self.layout.addWidget(self.redoButton)
+
     def addToList(self, entity):
         # Add an entity to the list
         entityItem = QListWidgetItem(entity.name)
         entityItem.setData(Qt.UserRole, entity)
         self.entityWidgetList.addItem(entityItem)
+        self.entityWidgetList.setCurrentItem(entityItem)
         

@@ -85,12 +85,7 @@ class MainWindow(QMainWindow):
         self.previousMousePosition = QVector3D()
         self.mousePressed = False
 
-        # Restore all objects to the UI Widget
-        if self.entities:
-            for entity in self.entities:
-                self.uiWidget.addToList(entity)
-
-        # Store the selected entity, if any
+        # Store the selected entity
         self.selectedEntity = None
 
         # Connect the buttons to their respective slots
@@ -101,9 +96,18 @@ class MainWindow(QMainWindow):
         # Connect the currentItemChanged signal to a slot
         self.uiWidget.entityWidgetList.currentItemChanged.connect(
             self.updateEditButton)
-        
-        # Create the line entity
-        self.lineEntity = None
+
+        # Create an edit window
+        self.editWindow = EditWindow(self)
+
+        # Connect the undo and redo buttons to the undo and redo methods of the EditWindow
+        self.uiWidget.undoButton.clicked.connect(self.editWindow.undo)
+        self.uiWidget.redoButton.clicked.connect(self.editWindow.redo)
+
+        # Restore all objects to the UI Widget
+        if self.entities:
+            for entity in self.entities:
+                self.uiWidget.addToList(entity)
     
     def onMousePressed(self, event):
         self.mousePressed = True
@@ -246,7 +250,6 @@ class MainWindow(QMainWindow):
 
     def openEditWindow(self):
         # Open the edit window
-        self.editWindow = EditWindow(self)
         self.editWindow.loadEntity(self.selectedEntity)
         self.editWindow.show()
 
@@ -263,7 +266,8 @@ class MainWindow(QMainWindow):
         try:
             with open(filename, 'r') as f:
                 data = json.load(f)
-                return [Entity3D.from_dict(d, self.rootEntity, self) for d in data]
+                entities = [Entity3D.from_dict(d, self.rootEntity, self) for d in data]
+                return entities
         except (FileNotFoundError, EOFError, ValueError):
             return []
 
