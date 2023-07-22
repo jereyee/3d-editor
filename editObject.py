@@ -57,7 +57,6 @@ class EditWindow(QDialog):
 
     Methods:
         loadEntity: _description_
-        saveChanges: _description_
         applyNameChange: _description_
         applyPositionChange: _description_
         applyOrientationChange: _description_
@@ -137,12 +136,6 @@ class EditWindow(QDialog):
         self.editForm.addRow("Orientation:", self.orientationLayout)
         self.editForm.addRow("Dimensions:", self.dimensionLayout)
 
-        # Create a save button
-        self.saveButton = QPushButton("Save")
-        self.saveButton.clicked.connect(self.saveChanges)
-        self.editForm.addRow(self.saveButton)
-        self.saveButton.hide()
-
         # Create a list to keep track of the changes
         self.history = []
         self.history_index = -1
@@ -178,7 +171,6 @@ class EditWindow(QDialog):
         self.history_index += 1
 
         # Update the text of the QListWidgetItem
-        print(type(self.parent()))
         self.selectedEntity.mainWindow.uiWidget.entityWidgetList.currentItem().setText(name)
 
     def applyPositionChange(self):
@@ -249,11 +241,6 @@ class EditWindow(QDialog):
         palette.setColor(self.colorLabel.backgroundRole(), color)
         self.colorLabel.setPalette(palette)
 
-    """ def openColorPicker(self, event):
-        color = QColorDialog.getColor(self.selectedEntity.material.diffuse())
-        if color.isValid():
-            self.updateColorLabel(color) """
-
     def loadEntity(self, entity):
         self.selectedEntity = entity
 
@@ -291,51 +278,6 @@ class EditWindow(QDialog):
             self.dimensionZEdit.setValue(0)
             self.dimensionYEdit.setVisible(False)
             self.dimensionZEdit.setVisible(False)
-
-    def saveChanges(self):
-        # Get the new attributes from the input fields
-        name = self.nameEdit.text()
-        color = self.colorLabel.palette().color(self.colorLabel.backgroundRole())
-
-        # Get the new position
-        positionX = self.positionXEdit.value()
-        positionY = self.positionYEdit.value()
-        positionZ = self.positionZEdit.value()
-        position = (positionX, positionY, positionZ)
-
-        # Get the new orientation
-        orientationW = self.orientationWEdit.value()
-        orientationX = self.orientationXEdit.value()
-        orientationY = self.orientationYEdit.value()
-        orientationZ = self.orientationZEdit.value()
-        orientation = (
-            orientationW, orientationX, orientationY, orientationZ)
-
-        # Get the new dimensions
-        dimensionX = self.dimensionXEdit.value()
-        dimensionY = self.dimensionYEdit.value()
-        dimensionZ = self.dimensionZEdit.value()
-
-        # Create a command to update the selected entity's attributes
-        command = Command(self.selectedEntity, {
-            'name': name,
-            'color': color.getRgb(),
-            'position': position,
-            'orientation': orientation,
-            'dimensions': (dimensionX, dimensionY, dimensionZ),
-        })
-        command.execute()
-
-        # Add it to the history
-        self.history = self.history[:self.history_index+1]
-        self.history.append(command)
-        self.history_index += 1
-
-        # Update the text of the QListWidgetItem
-        self.parent().uiWidget.entityWidgetList.currentItem().setText(name)
-
-        # Close the edit window
-        self.close()
 
     def undo(self):
         """ There's a bug here where the undo throws an error when the object has already been deleted """
