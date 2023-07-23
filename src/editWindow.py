@@ -296,7 +296,7 @@ class EditWindow(QDialog):
         self.blockOrUnblockSignals(False)
 
     def undo(self):
-        """ There's a bug here where the undo throws an error when the object has already been deleted """
+        """ TODO: There's a bug here where the undo throws an error when the object has already been deleted """
         if self.history_index >= 0:
             self.history[self.history_index].undo()
             self.history_index -= 1
