@@ -2,6 +2,8 @@
 
 This project uses PySide6 and Python to build a 3D object viewer within 2 days. This was fun, prior to this I had no experience with PySide6.
 
+To launch, run `python main.py` in the root directory.
+
 ## Requirements
 
 | Component | Description | Status |
