@@ -9,7 +9,7 @@ To launch, run `python main.py` in the root directory.
 | Component | Description | Status |
 | --- | --- | --- |
 | Scene Rendering | A 3D viewer that shows objects in the 3D environment | Completed |
-| Camera Control | Able to navigate the 3D environment moving up, down, left, right, forward, backward <br> Able to rotate around a point | Completed |
+| Camera Control | Able to navigate the 3D environment moving up, down, left, right, forward, backward <br> Able to rotate around a point <br> See [QOrbitCameraController](https://doc.qt.io/qtforpython-6/PySide6/Qt3DExtras/QOrbitCameraController.html) for full list of controls. | Completed |
 | Object Management | Able to create primitives box and sphere to the environment <br> Able to delete object in the environment <br> Able to list all objects in the environment | Completed |
 | Object Editing | Able to change the name of the object by modifying the name attribute <br> Able to change the color of the drawable by modifying the color attribute <br> Able to change position and orientation of object by modifying model attributes | Completed |
 | Data Management | Store model attributes in local storage (as JSON) <br> Should be able to resume the app from shutdown or unexpected crashing | Completed |
