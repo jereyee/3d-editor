@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
     load_data(filename):
         Loads the entities from a file.
     """
-    
+
     def __init__(self):
         super().__init__()
 
