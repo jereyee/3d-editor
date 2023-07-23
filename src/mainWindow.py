@@ -1,19 +1,15 @@
 import json
-import pickle
-import struct
-import sys
-from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime, QTimer, Signal, QUrl, QByteArray
-from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-                               QPushButton, QListWidget, QLabel, QListWidgetItem, QComboBox,
-                               QLineEdit, QColorDialog, QFormLayout, QDialog, QGridLayout)
-from PySide6.Qt3DRender import Qt3DRender
-from editObject import EditWindow
-from userInterface import UIWidget
-from entityObject import Entity3D
-from constants import STL_SCALE
+from PySide6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
+                               QLabel)
+from src.editWindow import EditWindow
+from src.userInterface import UIWidget
+from src.entityObject import Entity3D
+from src.constants import PERSPECTIVE_PROJECTION_VALUES, STL_SCALE, ShapeType, shapeClasses, STL_FILE_PATH
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -92,7 +88,7 @@ class MainWindow(QMainWindow):
         if self.entities:
             for entity in self.entities:
                 self.uiWidget.addToList(entity)
-    
+
     def onMousePressed(self, event):
         self.mousePressed = True
         self.camController.setEnabled(False)
@@ -113,8 +109,8 @@ class MainWindow(QMainWindow):
             if self.selectedEntity is not None:
                 # Calculate the difference between the current and previous mouse positions
                 difference = QVector3D(world_position.x() - self.previousMousePosition.x(),
-                                    world_position.y() - self.previousMousePosition.y(),
-                                    0)  # Ignore changes in Z
+                                       world_position.y() - self.previousMousePosition.y(),
+                                       0)  # Ignore changes in Z
 
                 # Apply the difference to the entity's position
                 new_position = self.selectedEntity.transform.translation() + difference
@@ -127,13 +123,13 @@ class MainWindow(QMainWindow):
 
             # Update the previous mouse position
             self.previousMousePosition = world_position
-        
+
     def updateCameraPosition(self):
         # Update the camera position label
         camera_position = self.view.camera().position()
         self.cameraPositionLabel.setText(
             f"Camera position: x={camera_position.x():.2f}, y={camera_position.y():.2f}, z={camera_position.z():.2f}")
-        
+
     def onEntityClicked(self, entity):
         # Find the corresponding item in the list and select it
         for i in range(self.uiWidget.entityWidgetList.count()):
@@ -143,7 +139,7 @@ class MainWindow(QMainWindow):
                 break
 
     def createScene(self):
-        
+
         # Root entity
         self.rootEntity = Qt3DCore.QEntity()
 
@@ -151,7 +147,7 @@ class MainWindow(QMainWindow):
         self.view.defaultFrameGraph().setClearColor(QColor(Qt.gray))
 
         # Camera
-        self.view.camera().lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
+        self.view.camera().lens().setPerspectiveProjection(*PERSPECTIVE_PROJECTION_VALUES)
         self.view.camera().setViewCenter(QVector3D(0, 0, 0))
         self.view.camera().setPosition(QVector3D(0, 0, 10))
         self.view.camera().setUpVector(QVector3D(0, 1, 0))
@@ -167,44 +163,37 @@ class MainWindow(QMainWindow):
 
     def addShape(self):
         # Get the selected shape
-        selectedShape = self.uiWidget.shapeComboBox.currentText()
-
-        # Mapping of shape names to their corresponding classes
-        shape_classes = {
-            "Cube": Qt3DExtras.QCuboidMesh,
-            "Sphere": Qt3DExtras.QSphereMesh,
-            "STL": Qt3DRender.QMesh
-        }
+        selectedShape = ShapeType[self.uiWidget.shapeComboBox.currentText().upper()]
 
         # Create the shape
-        shape_class = shape_classes.get(selectedShape)
+        shape_class = shapeClasses.get(selectedShape)
         if shape_class is not None:
-            if selectedShape == "STL":
+            if selectedShape == ShapeType.STL:
                 # If the selected shape is STL, load the STL file
                 mesh = shape_class()
-                mesh.setSource(QUrl.fromLocalFile("stl/test.stl"))
-                self.addEntity(mesh, "STL")
+                mesh.setSource(QUrl.fromLocalFile(STL_FILE_PATH))
+                self.addEntity(mesh, selectedShape)
             else:
                 self.addEntity(shape_class(), selectedShape)
 
-    def addEntity(self, mesh, name):
+    def addEntity(self, mesh, shape):
         # Create an entity
-        entity = Entity3D(self.rootEntity, mesh, name + str(len(self.entities) + 1), self)
+        entity = Entity3D(self.rootEntity, mesh, shape.value +
+                          str(len(self.entities) + 1), self)
 
-        if name == "Cube":
+        if shape == ShapeType.CUBE:
             entity.mesh.setXExtent(1)
             entity.mesh.setYExtent(1)
             entity.mesh.setZExtent(1)
-        elif name == "Sphere":
+        elif shape == ShapeType.SPHERE:
             entity.mesh.setRadius(1)
 
-        entity.transform.setScale3D(QVector3D(1, 1, 1))  # Set scale
-        if name == "STL":
-            entity.transform.setScale3D(QVector3D(STL_SCALE, STL_SCALE, STL_SCALE))
-        entity.transform.setRotation(QQuaternion.fromAxisAndAngle(
-            QVector3D(1, 0, 0), 45))  # Set rotation
-        entity.transform.setTranslation(
-            QVector3D(3 * len(self.entities), 0, 0))  # Set position
+        scale = QVector3D(STL_SCALE, STL_SCALE,
+                          STL_SCALE) if shape == ShapeType.STL else QVector3D(1, 1, 1)
+        rotation = QQuaternion.fromAxisAndAngle(QVector3D(1, 0, 0), 45)
+        position = QVector3D(3 * len(self.entities), 0, 0)
+
+        entity.setup(scale, rotation, position)
 
         # Add the entity to the UI widget
         self.uiWidget.addToList(entity)
@@ -269,7 +258,9 @@ class MainWindow(QMainWindow):
         try:
             with open(filename, 'r') as f:
                 data = json.load(f)
-                entities = [Entity3D.from_dict(d, self.rootEntity, self) for d in data]
+                entities = [Entity3D.from_dict(
+                    d, self.rootEntity, self) for d in data]
                 return entities
-        except (FileNotFoundError, EOFError, ValueError):
+        except (FileNotFoundError, EOFError, ValueError) as e:
+            print(f"Error loading data from {filename}: {e}")
             return []

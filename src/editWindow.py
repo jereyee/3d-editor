@@ -7,6 +7,7 @@ from PySide6.Qt3DRender import Qt3DRender
 from src.command import Command
 from src.constants import STL_SCALE
 
+
 class EditWindow(QDialog):
     """ 
     A class used to represent an Edit Window which allows for editing the attributes of a selected object.
@@ -282,9 +283,12 @@ class EditWindow(QDialog):
             self.dimensionYEdit.setVisible(False)
             self.dimensionZEdit.setVisible(False)
         elif isinstance(self.selectedEntity.mesh, Qt3DRender.QMesh):
-            self.dimensionXEdit.setValue(self.selectedEntity.transform.scale3D().x() * (1/STL_SCALE))
-            self.dimensionYEdit.setValue(self.selectedEntity.transform.scale3D().y() * (1/STL_SCALE))
-            self.dimensionZEdit.setValue(self.selectedEntity.transform.scale3D().z() * (1/STL_SCALE))
+            self.dimensionXEdit.setValue(
+                self.selectedEntity.transform.scale3D().x() * (1/STL_SCALE))
+            self.dimensionYEdit.setValue(
+                self.selectedEntity.transform.scale3D().y() * (1/STL_SCALE))
+            self.dimensionZEdit.setValue(
+                self.selectedEntity.transform.scale3D().z() * (1/STL_SCALE))
             self.dimensionYEdit.setVisible(True)
             self.dimensionZEdit.setVisible(True)
 

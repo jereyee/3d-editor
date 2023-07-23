@@ -3,7 +3,8 @@ from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
 from PySide6.QtCore import QUrl, QFileInfo
-from constants import STL_SCALE
+from src.constants import STL_SCALE, ShapeType, shapeClasses
+
 
 class Entity3D:
     """_summary_
@@ -21,6 +22,7 @@ class Entity3D:
         to_dict: _description_
         from_dict: _description_
     """
+
     def __init__(self, root_entity, mesh, name, mainWindow):
         self.entity = Qt3DCore.QEntity(root_entity)
         self.mesh = mesh
@@ -41,13 +43,13 @@ class Entity3D:
 
         # Connect the clicked signal to a slot
         self.picker.clicked.connect(self.onClicked)
-        
+
         # Connect mouse movements to the mainWindow
         self.picker.pressed.connect(self.mainWindow.onMousePressed)
         self.picker.released.connect(self.mainWindow.onMouseReleased)
         self.picker.setDragEnabled(True)
         self.picker.moved.connect(self.mainWindow.onMouseMoved)
-    
+
     def onClicked(self, event):
         self.mainWindow.onEntityClicked(self)
 
@@ -56,30 +58,36 @@ class Entity3D:
         data = {
             'name': self.name,
             'color': self.material.diffuse().getRgb(),
-            'position': (self.transform.translation().x(), 
-                         self.transform.translation().y(), 
+            'position': (self.transform.translation().x(),
+                         self.transform.translation().y(),
                          self.transform.translation().z()),
-            'orientation': (self.transform.rotation().scalar(), 
-                            self.transform.rotation().x(), 
-                            self.transform.rotation().y(), 
+            'orientation': (self.transform.rotation().scalar(),
+                            self.transform.rotation().x(),
+                            self.transform.rotation().y(),
                             self.transform.rotation().z()),
         }
         if isinstance(self.mesh, Qt3DExtras.QCuboidMesh):
-            data['dimensions'] = (self.mesh.xExtent(), 
-                                  self.mesh.yExtent(), 
+            data['dimensions'] = (self.mesh.xExtent(),
+                                  self.mesh.yExtent(),
                                   self.mesh.zExtent())
             data['shape'] = 'Cube'
         elif isinstance(self.mesh, Qt3DExtras.QSphereMesh):
             data['dimensions'] = (self.mesh.radius(),)
             data['shape'] = 'Sphere'
         elif isinstance(self.mesh, Qt3DRender.QMesh):
-            data['dimensions'] = (self.transform.scale3D().x() * (1/STL_SCALE), 
-                                  self.transform.scale3D().y() * (1/STL_SCALE), 
+            data['dimensions'] = (self.transform.scale3D().x() * (1/STL_SCALE),
+                                  self.transform.scale3D().y() * (1/STL_SCALE),
                                   self.transform.scale3D().z() * (1/STL_SCALE))
             data['shape'] = 'STL'
-            data['source'] = self.mesh.source().toLocalFile()  # Save the source file of the STL mesh
+            # Save the source file of the STL mesh
+            data['source'] = self.mesh.source().toLocalFile()
         return data
-    
+
+    def setup(self, scale, rotation, position):
+        self.transform.setScale3D(scale)  # Set scale
+        self.transform.setRotation(rotation)  # Set rotation
+        self.transform.setTranslation(position)  # Set position
+
     def update_properties(self, data):
         for key, value in data.items():
             if key == 'name':
@@ -108,12 +116,7 @@ class Entity3D:
     @staticmethod
     def from_dict(data, root_entity, mainWindow):
         # Create a new entity from a dictionary
-        shape_classes = {
-            "Cube": Qt3DExtras.QCuboidMesh,
-            "Sphere": Qt3DExtras.QSphereMesh,
-            "STL": Qt3DRender.QMesh
-        }
-        shape_class = shape_classes.get(data['shape'])
+        shape_class = shapeClasses.get(ShapeType[data['shape'].upper()])
         entity = Entity3D(root_entity, shape_class(), data['name'], mainWindow)
         if data['shape'] == 'STL':
             file_info = QFileInfo(data['source'])
@@ -122,7 +125,8 @@ class Entity3D:
                 entity.mesh.setSource(QUrl.fromLocalFile(data['source']))
             else:
                 # Show an error message and skip loading the entity
-                print(f"Error: STL file {data['source']} does not exist. Skipping entity {data['name']}.")
+                print(
+                    f"Error: STL file {data['source']} does not exist. Skipping entity {data['name']}.")
                 return None
         entity.update_properties(data)
         return entity
