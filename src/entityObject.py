@@ -7,20 +7,40 @@ from src.constants import STL_SCALE, ShapeType, shapeClasses
 
 
 class Entity3D:
-    """_summary_
+    """
+    The Entity3D class represents a 3D entity in the scene.
 
-    Attributes:
-        entity (Qt3DCore.QEntity): _description_
-        mesh (Qt3DExtras.QCuboidMesh): _description_
-        name (str): _description_
-        material (Qt3DExtras.QDiffuseSpecularMaterial): _description_
-        transform (Qt3DCore.QTransform): _description_
-        picker (Qt3DRender.QObjectPicker): _description_
-        mainWindow (MainWindow): _description_
+    Attributes
+    ----------
+    entity : Qt3DCore.QEntity
+        The Qt3D entity that this class wraps.
+    mesh : Qt3DExtras.QGeometryRenderer
+        The mesh that defines the shape of the entity.
+    name : str
+        The name of the entity.
+    material : Qt3DExtras.QDiffuseSpecularMaterial
+        The material of the entity.
+    transform : Qt3DCore.QTransform
+        The transform of the entity.
+    picker : Qt3DRender.QObjectPicker
+        The object picker for the entity.
+    mainWindow : MainWindow
+        The main window of the application.
 
-    Methods:
-        to_dict: _description_
-        from_dict: _description_
+    Methods
+    -------
+    onClicked(event):
+        Handles the event when the entity is clicked.
+    toDict():
+        Converts the entity to a dictionary.
+    setup(scale, rotation, position):
+        Sets up the entity with the given scale, rotation, and position.
+    updateProperties(data):
+        Updates the properties of the entity from a dictionary.
+    updateFromDict(data):
+        Updates the properties of the entity from a dictionary.
+    fromDict(data, root_entity, mainWindow):
+        Creates a new entity from a dictionary.
     """
 
     def __init__(self, root_entity, mesh, name, mainWindow):
@@ -53,7 +73,7 @@ class Entity3D:
     def onClicked(self, event):
         self.mainWindow.onEntityClicked(self)
 
-    def to_dict(self):
+    def toDict(self):
         # Convert the entity to a dictionary
         data = {
             'name': self.name,
@@ -88,7 +108,7 @@ class Entity3D:
         self.transform.setRotation(rotation)  # Set rotation
         self.transform.setTranslation(position)  # Set position
 
-    def update_properties(self, data):
+    def updateProperties(self, data):
         for key, value in data.items():
             if key == 'name':
                 self.name = value
@@ -109,12 +129,12 @@ class Entity3D:
                     scaled_values = [v * STL_SCALE for v in value]
                     self.transform.setScale3D(QVector3D(*scaled_values))
 
-    def update_from_dict(self, data):
+    def updateFromDict(self, data):
         # Update the properties of the entity from a dictionary
-        self.update_properties(data)
+        self.updateProperties(data)
 
     @staticmethod
-    def from_dict(data, root_entity, mainWindow):
+    def fromDict(data, root_entity, mainWindow):
         # Create a new entity from a dictionary
         shape_class = shapeClasses.get(ShapeType[data['shape'].upper()])
         entity = Entity3D(root_entity, shape_class(), data['name'], mainWindow)
@@ -128,5 +148,5 @@ class Entity3D:
                 print(
                     f"Error: STL file {data['source']} does not exist. Skipping entity {data['name']}.")
                 return None
-        entity.update_properties(data)
+        entity.updateProperties(data)
         return entity

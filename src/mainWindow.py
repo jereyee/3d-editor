@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
                 # Calculate the difference between the current and previous mouse positions
                 difference = QVector3D(world_position.x() - self.previousMousePosition.x(),
                                        world_position.y() - self.previousMousePosition.y(),
-                                       0)  # Ignore changes in Z
+                                       world_position.z() - self.previousMousePosition.z()) 
 
                 # Apply the difference to the entity's position
                 new_position = self.selectedEntity.transform.translation() + difference
@@ -305,13 +305,13 @@ class MainWindow(QMainWindow):
 
     def save_data(self, data, filename):
         with open(filename, 'w') as f:
-            json.dump([entity.to_dict() for entity in data], f)
+            json.dump([entity.toDict() for entity in data], f)
 
     def load_data(self, filename):
         try:
             with open(filename, 'r') as f:
                 data = json.load(f)
-                entities = [Entity3D.from_dict(
+                entities = [Entity3D.fromDict(
                     d, self.rootEntity, self) for d in data]
                 return entities
         except (FileNotFoundError, EOFError, ValueError) as e:

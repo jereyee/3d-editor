@@ -1,5 +1,6 @@
 class Command:
-    """ Currently, this only supports undo-ing changes to the name, color, position, and orientation of an entity.
+    """ 
+    Currently, this only supports undo-ing changes to the name, color, position, and orientation of an entity.
     This also does not account for dragging the entity around.
     In the future, it could possibly support undo-ing adding an object to the scene, deleting an object from the scene, etc.
 
@@ -25,13 +26,13 @@ class Command:
 
     def __init__(self, entity, data):
         self.entity = entity
-        self.previousData = entity.to_dict()
+        self.previousData = entity.toDict()
         self.currentData = data
 
     def execute(self):
         if self.entity is not None and self.entity.entity is not None:
-            self.entity.update_properties(self.currentData)
+            self.entity.updateProperties(self.currentData)
 
     def undo(self):
         if self.entity is not None and self.entity.entity is not None:
-            self.entity.update_properties(self.previousData)
+            self.entity.updateProperties(self.previousData)
