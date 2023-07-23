@@ -2,6 +2,8 @@ from PySide6.QtGui import QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
+from PySide6.QtCore import QUrl, QFileInfo
+from constants import STL_SCALE
 
 class Entity3D:
     """_summary_
@@ -70,20 +72,13 @@ class Entity3D:
         elif isinstance(self.mesh, Qt3DExtras.QSphereMesh):
             data['dimensions'] = (self.mesh.radius(),)
             data['shape'] = 'Sphere'
+        elif isinstance(self.mesh, Qt3DRender.QMesh):
+            data['dimensions'] = (self.transform.scale3D().x() * (1/STL_SCALE), 
+                                  self.transform.scale3D().y() * (1/STL_SCALE), 
+                                  self.transform.scale3D().z() * (1/STL_SCALE))
+            data['shape'] = 'STL'
+            data['source'] = self.mesh.source().toLocalFile()  # Save the source file of the STL mesh
         return data
-
-    """ def update_properties(self, data):
-        self.name = data['name']
-        self.material.setDiffuse(QColor(*data['color']))
-        self.transform.setTranslation(QVector3D(*data['position']))
-        self.transform.setRotation(QQuaternion(*data['orientation']))
-        if 'shape' in data:
-            if data['shape'] == 'Cube':
-                self.mesh.setXExtent(data['dimensions'][0])
-                self.mesh.setYExtent(data['dimensions'][1])
-                self.mesh.setZExtent(data['dimensions'][2])
-            elif data['shape'] == 'Sphere':
-                self.mesh.setRadius(data['dimensions'][0]) """
     
     def update_properties(self, data):
         for key, value in data.items():
@@ -93,7 +88,6 @@ class Entity3D:
                 self.material.setDiffuse(QColor(*value))
             elif key == 'position':
                 self.transform.setTranslation(QVector3D(*value))
-                print(self.transform.translation())
             elif key == 'orientation':
                 self.transform.setRotation(QQuaternion(*value))
             elif key == 'dimensions':
@@ -103,6 +97,9 @@ class Entity3D:
                     self.mesh.setZExtent(value[2])
                 elif isinstance(self.mesh, Qt3DExtras.QSphereMesh):
                     self.mesh.setRadius(value[0])
+                elif isinstance(self.mesh, Qt3DRender.QMesh):
+                    scaled_values = [v * STL_SCALE for v in value]
+                    self.transform.setScale3D(QVector3D(*scaled_values))
 
     def update_from_dict(self, data):
         # Update the properties of the entity from a dictionary
@@ -113,9 +110,19 @@ class Entity3D:
         # Create a new entity from a dictionary
         shape_classes = {
             "Cube": Qt3DExtras.QCuboidMesh,
-            "Sphere": Qt3DExtras.QSphereMesh
+            "Sphere": Qt3DExtras.QSphereMesh,
+            "STL": Qt3DRender.QMesh
         }
         shape_class = shape_classes.get(data['shape'])
         entity = Entity3D(root_entity, shape_class(), data['name'], mainWindow)
+        if data['shape'] == 'STL':
+            file_info = QFileInfo(data['source'])
+            if file_info.exists():
+                # Load the STL file
+                entity.mesh.setSource(QUrl.fromLocalFile(data['source']))
+            else:
+                # Show an error message and skip loading the entity
+                print(f"Error: STL file {data['source']} does not exist. Skipping entity {data['name']}.")
+                return None
         entity.update_properties(data)
         return entity

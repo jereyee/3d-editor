@@ -1,9 +1,9 @@
 class Command:
     """ Currently, this only supports undo-ing changes to the name, color, position, and orientation of an entity.
+    This also does not account for dragging the entity around.
     In the future, it could possibly support undo-ing adding an object to the scene, deleting an object from the scene, etc.
     
     A class used to represent a Command which supports undo-ing changes to the name, color, position, and orientation of an entity.
-
     ...
 
     Attributes

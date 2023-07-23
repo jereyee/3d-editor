@@ -4,19 +4,33 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, 
 from PySide6.QtCore import Qt
 
 class UIWidget(QWidget):
-    """_summary_
+    """ 
+    A class used to represent a UI Widget which includes a list of objects and buttons for manipulating them.
+    ...
 
-    Attributes:
-        layout (QVBoxLayout): _description_
-        entityWidgetList (QListWidget): _description_
-        shapeLabel (QLabel): _description_
-        shapeComboBox (QComboBox): _description_
-        addButton (QPushButton): _description_
-        deleteButton (QPushButton): _description_
-        editButton (QPushButton): _description_
+    Attributes
+    ----------
+    layout : QVBoxLayout
+        a vertical layout for the list and buttons
+    entityWidgetList : QListWidget
+        a list widget to keep track of the objects
+    shapeLabel : QLabel
+        a label for the shape selection combo box
+    shapeComboBox : QComboBox
+        a combo box for selecting the shape to add
+    addButton : QPushButton
+        a button to add shapes
+    deleteButton : QPushButton
+        a button to delete entities
+    undoButton : QPushButton
+        a button to undo the last change
+    redoButton : QPushButton
+        a button to redo the last undone change
 
-    Methods:
-        addToList: _description_
+    Methods
+    -------
+    addToList(entity):
+        Adds an entity to the list
     """
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -36,6 +50,7 @@ class UIWidget(QWidget):
         self.shapeComboBox = QComboBox()
         self.shapeComboBox.addItem("Cube")
         self.shapeComboBox.addItem("Sphere")
+        self.shapeComboBox.addItem("STL")
         self.layout.addWidget(self.shapeComboBox)
 
         # Create a button to add shapes
@@ -45,11 +60,6 @@ class UIWidget(QWidget):
         # Create a button to delete entities
         self.deleteButton = QPushButton("Delete object")
         self.layout.addWidget(self.deleteButton)
-
-        # Create an edit button
-        #  self.editButton = QPushButton("Edit object")
-        # self.editButton.setEnabled(False)  # Initially disabled
-        # self.layout.addWidget(self.editButton)
 
         # Create undo and redo buttons
         self.undoButton = QPushButton("Undo")

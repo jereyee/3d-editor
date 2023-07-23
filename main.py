@@ -1,17 +1,19 @@
 import json
 import pickle
+import struct
 import sys
-from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime, QTimer, Signal
+from PySide6.QtCore import Property, QObject, QPropertyAnimation, Signal, Qt, QTime, QTimer, Signal, QUrl, QByteArray
 from PySide6.QtGui import QGuiApplication, QMatrix4x4, QQuaternion, QVector3D, QColor
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                                QPushButton, QListWidget, QLabel, QListWidgetItem, QComboBox,
                                QLineEdit, QColorDialog, QFormLayout, QDialog, QGridLayout)
+from PySide6.Qt3DRender import Qt3DRender
 from editObject import EditWindow
 from userInterface import UIWidget
 from entityObject import Entity3D
-
+from constants import STL_SCALE
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -145,10 +147,14 @@ class MainWindow(QMainWindow):
         # Root entity
         self.rootEntity = Qt3DCore.QEntity()
 
+        # Set the background for the frame
+        self.view.defaultFrameGraph().setClearColor(QColor(Qt.gray))
+
         # Camera
-        self.view.camera().setUpVector(QVector3D(0, 1, 0))
+        self.view.camera().lens().setPerspectiveProjection(45.0, 16.0 / 9.0, 0.1, 1000.0)
         self.view.camera().setViewCenter(QVector3D(0, 0, 0))
-        self.view.camera().setPosition(QVector3D(0, 0, 20))
+        self.view.camera().setPosition(QVector3D(0, 0, 10))
+        self.view.camera().setUpVector(QVector3D(0, 1, 0))
 
         # For camera controls
         self.camController = Qt3DExtras.QOrbitCameraController(self.rootEntity)
@@ -166,13 +172,20 @@ class MainWindow(QMainWindow):
         # Mapping of shape names to their corresponding classes
         shape_classes = {
             "Cube": Qt3DExtras.QCuboidMesh,
-            "Sphere": Qt3DExtras.QSphereMesh
+            "Sphere": Qt3DExtras.QSphereMesh,
+            "STL": Qt3DRender.QMesh
         }
 
         # Create the shape
         shape_class = shape_classes.get(selectedShape)
         if shape_class is not None:
-            self.addEntity(shape_class(), selectedShape)
+            if selectedShape == "STL":
+                # If the selected shape is STL, load the STL file
+                mesh = shape_class()
+                mesh.setSource(QUrl.fromLocalFile("stl/test.stl"))
+                self.addEntity(mesh, "STL")
+            else:
+                self.addEntity(shape_class(), selectedShape)
 
     def addEntity(self, mesh, name):
         # Create an entity
@@ -186,6 +199,8 @@ class MainWindow(QMainWindow):
             entity.mesh.setRadius(1)
 
         entity.transform.setScale3D(QVector3D(1, 1, 1))  # Set scale
+        if name == "STL":
+            entity.transform.setScale3D(QVector3D(STL_SCALE, STL_SCALE, STL_SCALE))
         entity.transform.setRotation(QQuaternion.fromAxisAndAngle(
             QVector3D(1, 0, 0), 45))  # Set rotation
         entity.transform.setTranslation(

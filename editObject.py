@@ -3,13 +3,13 @@ from PySide6.QtWidgets import (QColorDialog, QDialog,
                                QFormLayout, QLineEdit, QLabel,
                                QHBoxLayout, QDoubleSpinBox)
 from PySide6.Qt3DExtras import Qt3DExtras
+from PySide6.Qt3DRender import Qt3DRender
 from command import Command
-
+from constants import STL_SCALE
 
 class EditWindow(QDialog):
     """ 
     A class used to represent an Edit Window which allows for editing the attributes of a selected object.
-
     ...
 
     Attributes
@@ -110,9 +110,9 @@ class EditWindow(QDialog):
         self.orientationLayout.addWidget(self.orientationZEdit)
 
         # Create separate input fields for each dimension of the object
-        self.dimensionXEdit = self.createSpinBox(-100.0, 100.0, 1)
-        self.dimensionYEdit = self.createSpinBox(-100.0, 100.0, 1)
-        self.dimensionZEdit = self.createSpinBox(-100.0, 100.0, 1)
+        self.dimensionXEdit = self.createSpinBox(0.0, 100.0, 1)
+        self.dimensionYEdit = self.createSpinBox(0.0, 100.0, 1)
+        self.dimensionZEdit = self.createSpinBox(0.0, 100.0, 1)
 
         # Create a QHBoxLayout for the dimension fields
         self.dimensionLayout = QHBoxLayout()
@@ -257,7 +257,6 @@ class EditWindow(QDialog):
 
         # Update the position fields
         position = self.selectedEntity.transform.translation()
-        print(position.x(), position.y(), position.z())
         self.positionXEdit.setValue(position.x())
         self.positionYEdit.setValue(position.y())
         self.positionZEdit.setValue(position.z())
@@ -282,6 +281,12 @@ class EditWindow(QDialog):
             self.dimensionZEdit.setValue(0)
             self.dimensionYEdit.setVisible(False)
             self.dimensionZEdit.setVisible(False)
+        elif isinstance(self.selectedEntity.mesh, Qt3DRender.QMesh):
+            self.dimensionXEdit.setValue(self.selectedEntity.transform.scale3D().x() * (1/STL_SCALE))
+            self.dimensionYEdit.setValue(self.selectedEntity.transform.scale3D().y() * (1/STL_SCALE))
+            self.dimensionZEdit.setValue(self.selectedEntity.transform.scale3D().z() * (1/STL_SCALE))
+            self.dimensionYEdit.setVisible(True)
+            self.dimensionZEdit.setVisible(True)
 
         # Unblock the signals of the input fields
         self.blockOrUnblockSignals(False)
