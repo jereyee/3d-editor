@@ -12,6 +12,59 @@ from src.constants import PERSPECTIVE_PROJECTION_VALUES, STL_SCALE, ShapeType, s
 
 
 class MainWindow(QMainWindow):
+    """
+    The MainWindow class is the main application window that contains the 3D view, UI widgets, and the edit window.
+
+    Attributes
+    ----------
+    view : Qt3DExtras.Qt3DWindow
+        The 3D window for displaying the 3D scene.
+    uiWidget : UIWidget
+        The widget that contains the user interface controls.
+    editWindow : EditWindow
+        The window for editing the properties of the selected entity.
+    rootEntity : Qt3DCore.QEntity
+        The root entity of the 3D scene.
+    entities : list
+        A list of all entities in the scene.
+    previousMousePosition : QVector3D
+        The previous position of the mouse.
+    mousePressed : bool
+        A flag indicating whether the mouse button is currently pressed.
+    selectedEntity : Entity3D
+        The currently selected entity in the scene.
+
+    Methods
+    -------
+    onMousePressed(event):
+        Handles the mouse press event.
+    onMouseReleased(event):
+        Handles the mouse release event.
+    onMouseMoved(event):
+        Handles the mouse move event.
+    updateCameraPosition():
+        Updates the label displaying the camera position.
+    onEntityClicked(entity):
+        Handles the event when an entity is clicked.
+    createScene():
+        Creates the 3D scene.
+    addShape():
+        Adds a new shape to the scene based on the selected shape in the UI widget.
+    addEntity(mesh, shape):
+        Adds a new entity to the scene.
+    deleteEntity():
+        Deletes the selected entity from the scene.
+    updateEditButton():
+        Updates the state of the "Edit" button.
+    openEditWindow():
+        Opens the edit window for the selected entity.
+    closeEvent(event):
+        Handles the event when the application is closing.
+    save_data(data, filename):
+        Saves the entities to a file.
+    load_data(filename):
+        Loads the entities from a file.
+    """
     def __init__(self):
         super().__init__()
 
