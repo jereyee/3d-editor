@@ -4,8 +4,8 @@ from PySide6.QtWidgets import (QColorDialog, QDialog,
                                QHBoxLayout, QDoubleSpinBox)
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DRender import Qt3DRender
-from command import Command
-from constants import STL_SCALE
+from src.command import Command
+from src.constants import STL_SCALE
 
 class EditWindow(QDialog):
     """ 
