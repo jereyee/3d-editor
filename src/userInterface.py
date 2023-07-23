@@ -62,6 +62,7 @@ class UIWidget(QWidget):
         self.layout.addWidget(self.deleteButton)
 
         # Create undo and redo buttons
+        """ TODO: Buttons should be disabled when there is nothing to undo or redo """
         self.undoButton = QPushButton("Undo")
         self.layout.addWidget(self.undoButton)
 
